@@ -1,8 +1,6 @@
-// data array has been removed now
-
-
-// add an initial state to the CommentBox, this is just an empty array because there are no comments
-
+// change commentBox so that comments are loaded dynamically without refresh - using POLLING
+// basically = ajax is pushed to another function (loadCommentsFromServer)
+// this function is then called repeatedly
 
 
 var CommentBox = React.createClass({
@@ -10,9 +8,7 @@ var CommentBox = React.createClass({
     return {data: []};
   },
 
-  // add componentDidMount. This is called once the commentBox is successfully rendered for first time
-
-  componentDidMount: function () {
+  loadCommentsFromServer: function() {
     $.ajax({
       url: this.props.url,
       dataType: 'json',
@@ -26,12 +22,19 @@ var CommentBox = React.createClass({
     });
   },
 
+
+  componentDidMount: function () {
+    this.loadCommentsFromServer();
+    setInterval(this.loadCommentsFromServer, this.props.pollInterval);
+    setInterval(console.log('polling comments'), this.props.pollInterval);
+  },
+
   render: function () {
     return (
       <div className="commentBox">
        <h1>Hello, world! I am a CommentBox.</h1>
         <CommentForm />
-        <CommentList data={this.state.data} /> /*this.state.data is dynamic + can change, replaces props*/
+        <CommentList data={this.state.data} />
       </div>
     );
   }
@@ -46,7 +49,7 @@ var CommentList = React.createClass({
           {comment.text}
         </Comment>
       )
-    });
+    }).reverse();
     return (
       <div className="commentList">
         {commentNodes}
@@ -55,12 +58,36 @@ var CommentList = React.createClass({
   }
 });
 
+// add form to commentForm
+// have to do some munging with the DOM... see "Controlled components" in the tutorial
+
 var CommentForm = React.createClass({
+  getInitialState: function() {
+    return {author: '', text: ''};
+  },
+  handleAuthorChange: function(e) {
+    this.setState({author: e.target.value});
+  },
+  handleTextChange: function(e) {
+    this.setState({text: e.target.value});
+  },
   render: function () {
+
     return (
-      <div className="commentForm">
-        Yo. I am commentForm.
-      </div>
+      <form className="commentForm">
+        <input
+          type="text"
+          placeholder="Yo name"
+          value={this.state.author}
+          onChange={this.handleAuthorChange}
+        />
+        <input type="text"
+               placeholder="Say something"
+               value={this.state.text}
+               onChange={this.handleTextChange}
+        />
+        <input type="submit" value="Post" />
+      </form>
     );
   }
 });
@@ -79,10 +106,10 @@ var Comment = React.createClass({
   }
 });
 
-// tell commentBox to get its data from a server
+// add pollInterval to control the time between refreshes
 
 ReactDOM.render(
-  <CommentBox url="https://northcoders-comment-box-server.herokuapp.com/api/comments" />,
+  <CommentBox url="https://northcoders-comment-box-server.herokuapp.com/api/comments" pollInterval={2000} />,
   document.getElementById('content')
 );
 
