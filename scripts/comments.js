@@ -1,7 +1,5 @@
-// change commentBox so that comments are loaded dynamically without refresh - using POLLING
-// basically = ajax is pushed to another function (loadCommentsFromServer)
-// this function is then called repeatedly
-
+// add handleCommentSubmit to commentBox because it 'owns' the comment list
+// so needs to be able to get the new comment
 
 var CommentBox = React.createClass({
   getInitialState: function () {
@@ -21,6 +19,9 @@ var CommentBox = React.createClass({
       }.bind(this)
     });
   },
+  handleCommentSubmit: function(comment) {
+    // todo: submit to the server and refresh the list
+  },
 
 
   componentDidMount: function () {
@@ -33,7 +34,7 @@ var CommentBox = React.createClass({
     return (
       <div className="commentBox">
        <h1>Hello, world! I am a CommentBox.</h1>
-        <CommentForm />
+        <CommentForm onCommentSubmit={this.handleCommentSubmit}/>
         <CommentList data={this.state.data} />
       </div>
     );
@@ -58,8 +59,7 @@ var CommentList = React.createClass({
   }
 });
 
-// add form to commentForm
-// have to do some munging with the DOM... see "Controlled components" in the tutorial
+
 
 var CommentForm = React.createClass({
   getInitialState: function() {
@@ -71,10 +71,21 @@ var CommentForm = React.createClass({
   handleTextChange: function(e) {
     this.setState({text: e.target.value});
   },
+  // handleSubmit added - function to clear form if submitted
+  handleSubmit: function(e) {
+    e.preventDefault();
+    var author = this.state.author.trim();
+    var text = this.state.text.trim();
+    if (!text || !author) {
+      return;
+    }
+    this.props.onCommentSubmit({author: author, text: text});
+    this.setState({author: '', text: ''});
+  },
   render: function () {
 
     return (
-      <form className="commentForm">
+      <form className="commentForm" onSubmit={this.handleSubmit}>
         <input
           type="text"
           placeholder="Yo name"
